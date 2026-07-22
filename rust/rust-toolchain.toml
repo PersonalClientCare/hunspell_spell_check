@@ -1,0 +1,19 @@
+[toolchain]
+# WARNING: *do not* use `stable`, `beta`, or `nightly` (alone) for the channel!
+# You must specify a version number/date in order to ensure reproducible builds.
+channel = "1.95.0" # or newer. another example: `nightly-2025-01-01`
+
+# The targets you want to support; these are the default:
+targets = [
+  # Windows
+  "aarch64-pc-windows-msvc",
+  "x86_64-pc-windows-msvc",
+
+  # Linux
+  "aarch64-unknown-linux-gnu",
+  "x86_64-unknown-linux-gnu",
+
+  # macOS
+  "aarch64-apple-darwin",
+  "x86_64-apple-darwin",
+]

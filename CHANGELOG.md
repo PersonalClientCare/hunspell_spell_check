@@ -1,0 +1,8 @@
+# 0.1.0
+
+- Initial release, extracted from the `appflowy_editor` fork.
+- Hunspell FFI bindings (`HunspellService`) with a Rust backend.
+- `SpellChecker` singleton facade with word-length / exclude-pattern rules.
+- `HunspellSpellCheckService` implementing Flutter's `SpellCheckService`.
+- `HunspellSpellCheckConfiguration` extending Flutter's
+  `SpellCheckConfiguration` for use with standard `TextField`s.
