@@ -2,7 +2,7 @@ name: hunspell_spell_check
 
 version: 0.1.0
 
-homepage: "https://github.com/PersonalClientCare/appflowy-editor"
+homepage: "https://github.com/PersonalClientCare/hunspell_spell_check"
 
 description: Hunspell-backed spell checking for Flutter desktop. Provides a
   SpellCheckService and SpellCheckConfiguration for standard Flutter text
