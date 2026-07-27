@@ -13,10 +13,8 @@ low-level `SpellChecker` facade for custom editors (e.g. `appflowy_editor`).
 
 1. Add the dependency:
 
-   ```yaml
-   dependencies:
-     hunspell_spell_check:
-       path: ../path/to/hunspell_spell_check
+   ```bash
+   flutter pub add hunspell_spell_check
    ```
 
 2. Bundle Hunspell dictionary files (`.aff` + `.dic`) as assets in your app:
