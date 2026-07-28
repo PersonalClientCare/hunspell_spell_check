@@ -1,5 +1,3 @@
-import 'package:flutter/widgets.dart';
-
 /// Configuration for spell checking behavior
 class HunspellSpellCheckOptions {
   const HunspellSpellCheckOptions({
@@ -9,8 +7,6 @@ class HunspellSpellCheckOptions {
     this.excludePatterns = const [],
     required this.affPath,
     required this.dicPath,
-    this.suggestionIcon,
-    this.highlightColor,
   });
 
   /// Minimum word length to check for spelling errors.
@@ -43,12 +39,6 @@ class HunspellSpellCheckOptions {
   /// - RegExp(r'\d+') excludes numbers
   final List<RegExp> excludePatterns;
 
-  /// Custom icon widget that gets displayed in front of suggestions.
-  final Widget? suggestionIcon;
-
-  /// Custom color for highlighting suggestions in overlay when hovering.
-  final Color? highlightColor;
-
   /// Necessary hunspell file paths
   final String affPath;
   final String dicPath;
@@ -61,8 +51,6 @@ class HunspellSpellCheckOptions {
     Set<String>? customDictionary,
     String? affPath,
     String? dicPath,
-    Widget? suggestionIcon,
-    Color? highlightColor,
   }) {
     return HunspellSpellCheckOptions(
       minWordLength: minWordLength ?? this.minWordLength,
@@ -72,8 +60,6 @@ class HunspellSpellCheckOptions {
       excludePatterns: excludePatterns ?? this.excludePatterns,
       affPath: affPath ?? this.affPath,
       dicPath: dicPath ?? this.dicPath,
-      suggestionIcon: suggestionIcon ?? this.suggestionIcon,
-      highlightColor: highlightColor ?? this.highlightColor,
     );
   }
 }
