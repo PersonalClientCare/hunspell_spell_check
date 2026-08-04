@@ -5,6 +5,7 @@ class HunspellSpellCheckOptions {
     this.checkOnlyCompletedWords = true,
     this.debounceDelay = Duration.zero,
     this.excludePatterns = const [],
+    this.customWords = const {},
     required this.affPath,
     required this.dicPath,
   });
@@ -39,6 +40,10 @@ class HunspellSpellCheckOptions {
   /// - RegExp(r'\d+') excludes numbers
   final List<RegExp> excludePatterns;
 
+  /// Words to seed the custom dictionary with on initialization, in addition
+  /// to any previously persisted via [SpellChecker.addCustomWord].
+  final Set<String> customWords;
+
   /// Necessary hunspell file paths
   final String affPath;
   final String dicPath;
@@ -48,7 +53,7 @@ class HunspellSpellCheckOptions {
     bool? checkOnlyCompletedWords,
     Duration? debounceDelay,
     List<RegExp>? excludePatterns,
-    Set<String>? customDictionary,
+    Set<String>? customWords,
     String? affPath,
     String? dicPath,
   }) {
@@ -58,6 +63,7 @@ class HunspellSpellCheckOptions {
           checkOnlyCompletedWords ?? this.checkOnlyCompletedWords,
       debounceDelay: debounceDelay ?? this.debounceDelay,
       excludePatterns: excludePatterns ?? this.excludePatterns,
+      customWords: customWords ?? this.customWords,
       affPath: affPath ?? this.affPath,
       dicPath: dicPath ?? this.dicPath,
     );

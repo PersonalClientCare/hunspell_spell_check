@@ -88,6 +88,52 @@ final suggestions = SpellChecker.instance.suggest('Hauss');
 `excludePatterns`, `checkOnlyCompletedWords`, `debounceDelay`) and UI hints
 (`suggestionIcon`, `highlightColor`) consumed by editor integrations.
 
+## Ignoring words (custom dictionary)
+
+Words the user marks as correct (e.g. via an "Add to dictionary" action) can
+be added to a custom dictionary. They're then treated as correctly spelled
+by both `checkWord`/`suggest` and the `SpellCheckService` integration, and
+persisted across app restarts:
+
+```dart
+await SpellChecker.instance.initialize(
+  config: const HunspellSpellCheckOptions(
+    affPath: 'assets/hunspell/german/de_DE.aff',
+    dicPath: 'assets/hunspell/german/de_DE.dic',
+  ),
+);
+
+// "Flutterismus" is misspelled according to the dictionary...
+await SpellChecker.instance.checkWord('Flutterismus'); // false
+
+// ...until the user ignores it. The word is persisted, so it stays
+// ignored across restarts too.
+await SpellChecker.instance.addCustomWord('Flutterismus');
+await SpellChecker.instance.checkWord('Flutterismus'); // true
+
+// Currently ignored words, and how to un-ignore one:
+SpellChecker.instance.customWords; // {'flutterismus'}
+await SpellChecker.instance.removeCustomWord('Flutterismus');
+```
+
+By default custom words are persisted to a file in the app's support
+directory via `FileCustomDictionaryStore`. Pass your own
+`CustomDictionaryStore` implementation to `initialize()` to plug in a
+different backend (e.g. `shared_preferences` or a database):
+
+```dart
+await SpellChecker.instance.initialize(
+  config: const HunspellSpellCheckOptions(
+    affPath: 'assets/hunspell/german/de_DE.aff',
+    dicPath: 'assets/hunspell/german/de_DE.dic',
+  ),
+  customDictionaryStore: MyCustomDictionaryStore(),
+);
+```
+
+`HunspellSpellCheckOptions.customWords` can also be used to seed the
+dictionary with words known upfront (e.g. product or brand names).
+
 ## Native backend
 
 The engine is a small Rust cdylib (`rust/`) wrapping `hunspell-rs`, built

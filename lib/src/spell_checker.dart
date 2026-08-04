@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 
+import 'custom_dictionary.dart';
 import 'hunspell_service.dart';
 import 'spell_check_options.dart';
 
@@ -14,6 +15,7 @@ class SpellChecker {
   // The underlying engine implementation
   late HunspellService _engine;
   late HunspellSpellCheckOptions _config;
+  late CustomDictionary _customDictionary;
 
   static final SpellChecker _instance = SpellChecker._internal();
   static SpellChecker get instance => _instance;
@@ -30,8 +32,12 @@ class SpellChecker {
 
   /// Initializes the native spell checker engine by extracting assets.
   /// Must be called before any checking operations.
+  ///
+  /// [customDictionaryStore] controls where words added via [addCustomWord]
+  /// are persisted. Defaults to [FileCustomDictionaryStore].
   Future<void> initialize({
     required HunspellSpellCheckOptions config,
+    CustomDictionaryStore? customDictionaryStore,
   }) async {
     if (_isInitialized || _initializing) return;
     _initializing = true;
@@ -43,6 +49,11 @@ class SpellChecker {
         dicPath: _config.dicPath,
       );
       await _engine.initialize();
+      _customDictionary = CustomDictionary(
+        store: customDictionaryStore,
+        seedWords: _config.customWords,
+      );
+      await _customDictionary.initialize();
       _isInitialized = true;
     } catch (ex) {
       _log.severe("Failed to init spell check service: $ex");
@@ -77,7 +88,12 @@ class SpellChecker {
       }
     }
 
-    // 3. Delegate to Hunspell Service
+    // 3. Custom Dictionary Check: words the user marked as correct
+    if (_customDictionary.contains(word)) {
+      return true;
+    }
+
+    // 4. Delegate to Hunspell Service
     try {
       final checkResult = _engine.checkWord(word);
       return checkResult;
@@ -107,6 +123,11 @@ class SpellChecker {
       return [];
     }
 
+    // A word the user has already marked as correct needs no suggestions.
+    if (_customDictionary.contains(word)) {
+      return [];
+    }
+
     // Since Hunspell suggestions are only for misspelled words,
     // we first check if it's correct. If it is, we return empty list.
     if (_engine.checkWord(word)) {
@@ -115,6 +136,39 @@ class SpellChecker {
 
     // Delegate to Hunspell Service
     return _engine.getSuggestions(word, maxSuggestions: maxSuggestions);
+  }
+
+  /// Words the user has marked as correct, so they're ignored by future
+  /// spell checks.
+  Set<String> get customWords {
+    if (!_isInitialized) {
+      throw StateError(
+        "SpellChecker must be initialized before reading custom words.",
+      );
+    }
+    return _customDictionary.words;
+  }
+
+  /// Marks [word] as correct so future checks and suggestions ignore it.
+  /// Persisted via the configured [CustomDictionaryStore].
+  Future<void> addCustomWord(String word) async {
+    if (!_isInitialized) {
+      throw StateError(
+        "SpellChecker must be initialized before adding custom words.",
+      );
+    }
+    await _customDictionary.add(word);
+  }
+
+  /// Removes [word] from the custom dictionary, so it will be flagged
+  /// again by future spell checks.
+  Future<void> removeCustomWord(String word) async {
+    if (!_isInitialized) {
+      throw StateError(
+        "SpellChecker must be initialized before removing custom words.",
+      );
+    }
+    await _customDictionary.remove(word);
   }
 
   /// Cleans up native resources and stops the service.
