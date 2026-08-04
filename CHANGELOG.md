@@ -1,3 +1,7 @@
+## 0.2.1
+
+- Add `CustomDictionaryStore` support for custom word persistence.
+
 # 0.1.0
 
 - Initial release, extracted from the `appflowy_editor` fork.
