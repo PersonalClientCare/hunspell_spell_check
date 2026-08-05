@@ -41,9 +41,9 @@ class AssetLoader implements AbstractAssetLoader {
   Future<File> loadAsset(String assetPath, String fileName) async {
     final dir = await getApplicationSupportDirectory();
     final file = File('${dir.path}/$fileName');
+    final data = await rootBundle.load(assetPath);
 
-    if (!await file.exists()) {
-      final data = await rootBundle.load(assetPath);
+    if (!await file.exists() || await file.length() != data.lengthInBytes) {
       await file.writeAsBytes(data.buffer.asUint8List());
     }
     return file;

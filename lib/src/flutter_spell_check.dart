@@ -1,7 +1,5 @@
 import 'dart:async';
-
-import 'package:flutter/services.dart'
-    show SpellCheckService, SuggestionSpan;
+import 'package:flutter/services.dart' show SpellCheckService, SuggestionSpan;
 import 'package:flutter/widgets.dart';
 
 import 'spell_check_options.dart';
@@ -28,57 +26,129 @@ class HunspellSpellCheckService implements SpellCheckService {
   /// Maximum number of suggestions returned per misspelled word.
   final int maxSuggestions;
 
-  // Word/non-word tokenization, unicode-aware so non-ASCII letters
-  // (ü, ß, é, ...) and combining marks stay part of the word token.
+  // In-memory caches to make repetitive word checking O(1). Bounded (see
+  // [_maxCacheEntries]) so long-running sessions over large documents don't
+  // grow these unboundedly.
+  final Map<String, bool> _validityCache = {};
+  final Map<String, List<String>> _suggestionCache = {};
+
+  static const int _maxCacheEntries = 5000;
+
+  // hunspell_check/hunspell_suggest are synchronous FFI calls, so awaiting
+  // them concurrently would only interleave microtasks on the same thread,
+  // not run in parallel. Instead we yield to the event loop periodically so
+  // a long block of text doesn't hold the UI thread for one uninterrupted
+  // synchronous burst. hunspell_suggest (edit-distance search) is far more
+  // expensive than hunspell_check (dictionary lookup), so it gets its own,
+  // much tighter, yield threshold.
+  static const int _checkYieldBatchSize = 100;
+  static const int _suggestYieldBatchSize = 3;
+
   static final RegExp _wordReg = RegExp(
     r'[\p{L}\p{M}\p{N}_]+',
     unicode: true,
   );
+
+  void _capCache<V>(Map<String, V> cache) {
+    if (cache.length <= _maxCacheEntries) return;
+    cache.remove(cache.keys.first);
+  }
 
   @override
   Future<List<SuggestionSpan>?> fetchSpellCheckSuggestions(
     Locale locale,
     String text,
   ) async {
-    await SpellChecker.instance.initialize(config: options);
+    // 1. Ensure initialization happens once without blocking hot path execution unnecessarily
     if (!SpellChecker.instance.isInitialized) {
-      // Engine failed to initialize; report spell check as unavailable.
-      return null;
+      await SpellChecker.instance.initialize(config: options);
+      if (!SpellChecker.instance.isInitialized) return null;
     }
 
     final spans = <SuggestionSpan>[];
-    for (final match in _wordReg.allMatches(text)) {
+    final matches = _wordReg.allMatches(text);
+
+    var checksSinceYield = 0;
+    var suggestionsSinceYield = 0;
+    for (final match in matches) {
       final word = match.group(0)!;
 
-      // Skip the word still being typed at the end of the text.
+      // Skip completed word check if user is still typing at the end of text
       if (options.checkOnlyCompletedWords && match.end == text.length) {
         continue;
       }
 
-      final isCorrect = await SpellChecker.instance.checkWord(word);
+      // The word regex excludes punctuation, so an abbreviation like "bzw."
+      // is matched as bare "bzw" — but dictionaries store such abbreviations
+      // with their trailing period, so the bare token never matches. Cache
+      // this separately from the bare word (rather than under `word`) so a
+      // mid-sentence occurrence without a period isn't wrongly considered
+      // correct just because the abbreviated form was seen elsewhere.
+      final hasTrailingDot =
+          match.end < text.length && text[match.end] == '.';
+      final cacheKey = hasTrailingDot ? '$word.' : word;
+
+      // 2. Fast cache lookup for word validity
+      bool? isCorrect = _validityCache[cacheKey];
+      if (isCorrect == null) {
+        isCorrect = SpellChecker.instance.checkWord(word);
+        if (!isCorrect && hasTrailingDot) {
+          isCorrect = SpellChecker.instance.checkWord('$word.');
+        }
+        _validityCache[cacheKey] = isCorrect;
+        _capCache(_validityCache);
+
+        // Cheap dictionary lookup: only yield every so often.
+        if (++checksSinceYield >= _checkYieldBatchSize) {
+          checksSinceYield = 0;
+          await Future<void>.delayed(Duration.zero);
+        }
+      }
+
       if (isCorrect) continue;
+
+      // 3. Fast cache lookup for Hunspell suggestions
+      List<String>? suggestions = _suggestionCache[cacheKey];
+      if (suggestions == null) {
+        suggestions = SpellChecker.instance.suggest(
+          word,
+          maxSuggestions: maxSuggestions,
+        );
+        _suggestionCache[cacheKey] = suggestions;
+        _capCache(_suggestionCache);
+
+        // Expensive edit-distance search: yield much more often so a run of
+        // new misspelled words can't block the UI thread for long.
+        if (++suggestionsSinceYield >= _suggestYieldBatchSize) {
+          suggestionsSinceYield = 0;
+          await Future<void>.delayed(Duration.zero);
+        }
+      }
 
       spans.add(
         SuggestionSpan(
           TextRange(start: match.start, end: match.end),
-          SpellChecker.instance.suggest(word, maxSuggestions: maxSuggestions),
+          suggestions,
         ),
       );
     }
+
     return spans;
   }
 
-  /// Forces the [EditableText] attached to [controller] to recompute its
-  /// spell-check results.
-  ///
-  /// Flutter only re-runs [fetchSpellCheckSuggestions] when the text content
-  /// itself changes, so after [SpellChecker.addCustomWord] a word's
-  /// misspelled underline stays on screen until the user edits the text.
-  /// Call this right after adding a custom word to clear it immediately: it
-  /// makes a no-op edit (appending then removing a character) so Flutter
-  /// notices a text change and reruns spell check, then restores the
-  /// original value so the visible text and cursor position are unchanged.
-  static void refreshSpellCheck(TextEditingController controller) {
+  /// Clears in-memory caches when custom words are added or dictionaries switch.
+  void clearCache() {
+    _validityCache.clear();
+    _suggestionCache.clear();
+  }
+
+  static void refreshSpellCheck(
+    TextEditingController controller, {
+    HunspellSpellCheckService? serviceInstance,
+  }) {
+    // Clear caches so updated word rules take effect immediately
+    serviceInstance?.clearCache();
+
     final TextEditingValue original = controller.value;
     controller.value = original.copyWith(text: '${original.text} ');
     controller.value = original;

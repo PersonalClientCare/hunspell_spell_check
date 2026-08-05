@@ -69,7 +69,7 @@ class SpellChecker {
   ///
   /// @param word The word to check.
   /// @return True if the word is correct or excluded by configuration, false otherwise.
-  Future<bool> checkWord(String word) async {
+  bool checkWord(String word) {
     if (!_isInitialized) {
       throw StateError(
         "SpellChecker must be initialized before checking words.",
