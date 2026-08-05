@@ -67,6 +67,22 @@ class HunspellSpellCheckService implements SpellCheckService {
     }
     return spans;
   }
+
+  /// Forces the [EditableText] attached to [controller] to recompute its
+  /// spell-check results.
+  ///
+  /// Flutter only re-runs [fetchSpellCheckSuggestions] when the text content
+  /// itself changes, so after [SpellChecker.addCustomWord] a word's
+  /// misspelled underline stays on screen until the user edits the text.
+  /// Call this right after adding a custom word to clear it immediately: it
+  /// makes a no-op edit (appending then removing a character) so Flutter
+  /// notices a text change and reruns spell check, then restores the
+  /// original value so the visible text and cursor position are unchanged.
+  static void refreshSpellCheck(TextEditingController controller) {
+    final TextEditingValue original = controller.value;
+    controller.value = original.copyWith(text: '${original.text} ');
+    controller.value = original;
+  }
 }
 
 /// A [SpellCheckConfiguration] wired to the Hunspell engine, for use with

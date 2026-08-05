@@ -134,6 +134,24 @@ await SpellChecker.instance.initialize(
 `HunspellSpellCheckOptions.customWords` can also be used to seed the
 dictionary with words known upfront (e.g. product or brand names).
 
+### Clearing the underline in a live TextField
+
+`addCustomWord` takes effect immediately for `checkWord`/`suggest`, but
+Flutter's `EditableText` only reruns spell check when the text content
+itself changes — it won't notice a word was added to the dictionary, so an
+already-underlined word stays underlined until the user edits the text.
+Call `HunspellSpellCheckService.refreshSpellCheck` right after adding the
+word to force Flutter to recheck immediately:
+
+```dart
+await SpellChecker.instance.addCustomWord(word);
+HunspellSpellCheckService.refreshSpellCheck(myTextEditingController);
+```
+
+This makes a no-op edit (appending then removing a character) so Flutter
+detects a change and reruns spell check, then restores the original value
+so the visible text and cursor position are unaffected.
+
 ## Native backend
 
 The engine is a small Rust cdylib (`rust/`) wrapping `hunspell-rs`, built

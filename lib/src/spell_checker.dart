@@ -151,6 +151,12 @@ class SpellChecker {
 
   /// Marks [word] as correct so future checks and suggestions ignore it.
   /// Persisted via the configured [CustomDictionaryStore].
+  ///
+  /// Takes effect immediately for subsequent [checkWord]/[suggest] calls.
+  /// If [word] is currently underlined in a live [TextField], Flutter won't
+  /// clear that underline on its own since it only rechecks spelling when
+  /// the text changes — call `HunspellSpellCheckService.refreshSpellCheck`
+  /// (from `flutter_spell_check.dart`) right after this to force it.
   Future<void> addCustomWord(String word) async {
     if (!_isInitialized) {
       throw StateError(
