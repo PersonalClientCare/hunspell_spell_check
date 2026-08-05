@@ -1,4 +1,8 @@
-## 0.2.1
+# 0.2.2
+
+- Add `HunspellSpellCheckService.refreshSpellCheck` to force Flutter's TextField to recheck spelling immediately after adding a custom word.
+
+# 0.2.1
 
 - Add `CustomDictionaryStore` support for custom word persistence.
 
