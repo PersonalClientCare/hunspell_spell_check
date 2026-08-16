@@ -1,3 +1,7 @@
+# 0.3.1
+
+- Update rust toolchain to 1.97.0
+
 # 0.3.0
 
 - `HunspellSpellCheckService.fetchSpellCheckSuggestions` now yields to the event loop periodically instead of checking an entire text in one synchronous burst, avoiding UI hangs on large documents. `suggest` calls (the more expensive Hunspell operation) yield more aggressively than `checkWord` calls.
