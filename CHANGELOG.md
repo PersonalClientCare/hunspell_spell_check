@@ -1,3 +1,7 @@
+# 0.3.4
+
+- Fix: check buildCodeAssets before building rust assets
+
 # 0.3.3
 
 - Bumps Flutter SDK to min 3.44
