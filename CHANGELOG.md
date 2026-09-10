@@ -1,3 +1,8 @@
+# 0.3.3
+
+- Bumps Flutter SDK to min 3.44
+- Upgrade dependencies
+
 # 0.3.2
 
 - Fix the dictionary silently failing to load on Windows when the path to it contains non-ASCII characters (most commonly an umlaut in the user name, since the dictionaries are extracted into the application support directory). Hunspell only decodes a path as UTF-8 when it carries the `\\?\` long-path prefix and otherwise reads it in the system ANSI codepage, so paths handed to the native engine now get that prefix, falling back to the plain path if the prefixed one doesn't load.
