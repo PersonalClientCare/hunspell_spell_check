@@ -15,10 +15,7 @@ import 'spell_checker.dart';
 /// language is determined by the dictionary files configured via
 /// [HunspellSpellCheckOptions.affPath] and [HunspellSpellCheckOptions.dicPath].
 class HunspellSpellCheckService implements SpellCheckService {
-  HunspellSpellCheckService({
-    required this.options,
-    this.maxSuggestions = 5,
-  });
+  HunspellSpellCheckService({required this.options, this.maxSuggestions = 5});
 
   /// Dictionary paths and word-filtering rules for the underlying engine.
   final HunspellSpellCheckOptions options;
@@ -44,10 +41,7 @@ class HunspellSpellCheckService implements SpellCheckService {
   static const int _checkYieldBatchSize = 100;
   static const int _suggestYieldBatchSize = 3;
 
-  static final RegExp _wordReg = RegExp(
-    r'[\p{L}\p{M}\p{N}_]+',
-    unicode: true,
-  );
+  static final RegExp _wordReg = RegExp(r'[\p{L}\p{M}\p{N}_]+', unicode: true);
 
   void _capCache<V>(Map<String, V> cache) {
     if (cache.length <= _maxCacheEntries) return;
@@ -84,8 +78,7 @@ class HunspellSpellCheckService implements SpellCheckService {
       // this separately from the bare word (rather than under `word`) so a
       // mid-sentence occurrence without a period isn't wrongly considered
       // correct just because the abbreviated form was seen elsewhere.
-      final hasTrailingDot =
-          match.end < text.length && text[match.end] == '.';
+      final hasTrailingDot = match.end < text.length && text[match.end] == '.';
       final cacheKey = hasTrailingDot ? '$word.' : word;
 
       // 2. Fast cache lookup for word validity
@@ -181,9 +174,9 @@ class HunspellSpellCheckConfiguration extends SpellCheckConfiguration {
     super.misspelledTextStyle,
     super.spellCheckSuggestionsToolbarBuilder,
   }) : super(
-          spellCheckService: HunspellSpellCheckService(
-            options: options,
-            maxSuggestions: maxSuggestions,
-          ),
-        );
+         spellCheckService: HunspellSpellCheckService(
+           options: options,
+           maxSuggestions: maxSuggestions,
+         ),
+       );
 }

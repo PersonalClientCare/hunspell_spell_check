@@ -1,3 +1,8 @@
+# Unreleased
+
+- Compile on web: the FFI-backed `HunspellService` is swapped for a web stub via conditional import. Its initialization fails, so `SpellChecker` stays uninitialized and spell checking is simply off in the browser.
+- Fix: check buildCodeAssets before building rust assets
+
 # 0.3.2
 
 - Fix the dictionary silently failing to load on Windows when the path to it contains non-ASCII characters (most commonly an umlaut in the user name, since the dictionaries are extracted into the application support directory). Hunspell only decodes a path as UTF-8 when it carries the `\\?\` long-path prefix and otherwise reads it in the system ANSI codepage, so paths handed to the native engine now get that prefix, falling back to the plain path if the prefixed one doesn't load.

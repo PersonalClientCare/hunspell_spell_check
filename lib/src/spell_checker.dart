@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:logging/logging.dart';
 
 import 'custom_dictionary.dart';
-import 'hunspell_service.dart';
+import 'hunspell_service.dart'
+    if (dart.library.js_interop) 'hunspell_service_web.dart';
 import 'spell_check_options.dart';
 
 final Logger _log = Logger('hunspell_spell_check');
@@ -108,10 +109,7 @@ class SpellChecker {
   ///
   /// @param word The misspelled word.
   /// @return A list of suggested correct spellings.
-  List<String> suggest(
-    String word, {
-    int maxSuggestions = 5,
-  }) {
+  List<String> suggest(String word, {int maxSuggestions = 5}) {
     if (!_isInitialized) {
       throw StateError(
         "SpellChecker must be initialized before suggesting words.",
